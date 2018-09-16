@@ -1,8 +1,25 @@
 const express = require('express');
+const path = require('path');
+const log4js = require('log4js');
+const glob = require('glob');
+require('module-alias/register');
+
+require('@config');
+
+const logger = log4js.getLogger(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get('/', (req, res) => res.send('Hello World!'));
+global.__base = path.dirname(__dirname);
 
-app.use('/static', express.static('dist'))
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.use('/static', express.static('dist'));
+
+// register controllers
+const controllers = glob.sync('controller/**/*.js', { cwd: __dirname });
+
+for (const controller of controllers) {
+  const controllerPath = path.resolve(__dirname, controller);
+  require(controllerPath)(app);
+}
+
+app.listen(port, () => logger.info(`Example app listening on port ${port}!`));
